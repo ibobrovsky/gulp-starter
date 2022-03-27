@@ -1,0 +1,15 @@
+{% macro picture(props = {}) %}
+    <div class="picture{% if props.cover %} picture--cover{% endif %}{% if props.ratio %} picture--ratio{% endif %}{% if props.lazy %} picture--loading{% endif %}{% if props.className %} {{ props.className }}{% endif %}">
+        <picture>
+            {% for source in props.sources %}
+                <source {% if props.lazy %}data-{% endif %}srcset="{{ source.srcset }}" type="{{ source.type }}">
+            {% endfor %}
+            <img
+                {% if props.lazy %}class="lazyload"{% endif %}
+                alt="{{ props.alt }}"
+                {% if props.width %}width="{{ props.width }}"{% endif %}
+                {% if props.height %}height="{{ props.height }}"{% endif %}
+            >
+        </picture>
+    </div>
+{% endmacro %}

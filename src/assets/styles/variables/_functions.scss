@@ -1,0 +1,17 @@
+@use "sass:math";
+
+@function sassMath($number1, $number2) {
+  @return math.div($number1, $number2)
+}
+
+@function rem($pixels: 0, $context: 16) {
+  @if (unitless($pixels)) {
+    $pixels: $pixels * 1px;
+  }
+
+  @if (unitless($context)) {
+    $context: $context * 1px;
+  }
+
+  @return sassMath($pixels, $context) * 1rem;
+}

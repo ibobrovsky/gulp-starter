@@ -1,0 +1,28 @@
+.header {
+  position: relative;
+  min-height: rem(55);
+  @include sm-block() {
+    min-height: rem(64);
+  }
+  &__container {
+    position: relative;
+    background-color: $color_white;
+    @include to($break_lg) {
+      @include transition(box-shadow);
+    }
+  }
+
+  &--fixed {
+    .header {
+      &__container {
+        position: fixed;
+        z-index: 50;
+        top: 0;
+        left: 0;
+        right: 0;
+        box-shadow: $box_shadow;
+        min-width: rem($break_xs);
+      }
+    }
+  }
+}

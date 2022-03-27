@@ -1,0 +1,72 @@
+@mixin transition($props...) {
+  transition-property: $props;
+  transition-duration: $transition_duration;
+  transition-timing-function: $transition_timing_function;
+}
+
+@mixin pseudo($display: block, $pos: absolute, $content: ''){
+  content: $content;
+  display: $display;
+  position: $pos;
+}
+
+@mixin responsive-ratio($x,$y, $pseudo: false) {
+  $padding: unquote( ( sassMath($y, $x) ) * 100 + '%' );
+  @if $pseudo {
+    &:before {
+      @include pseudo($pos: relative);
+      width: 100%;
+      padding-top: $padding;
+    }
+  } @else {
+    padding-top: $padding;
+  }
+}
+
+@mixin place($cl) {
+  &::-webkit-input-placeholder {color:$cl;}
+  &::-moz-placeholder {color:$cl;opacity:1;}
+  &:-moz-placeholder {color:$cl;}
+  &:-ms-input-placeholder {color:$cl;}
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  bottom: 0;
+  padding: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+}
+
+@mixin abs-full() {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@mixin truncate() {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin hover() {
+  @include lg-block() {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+@mixin hover-size() {
+  @include lg-block() {
+    @content;
+  }
+}

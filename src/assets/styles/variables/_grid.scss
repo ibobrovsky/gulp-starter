@@ -1,0 +1,181 @@
+$columns: 24;
+$atom: sassMath(100%, $columns);
+
+$break_xs: 360;
+$break_sm: 768;
+$break_md: 1024;
+$break_lg: 1376;
+$break_xl: 1920;
+$container_max_width: 1504;
+
+$offset: 32;
+$offset_one_side: sassMath($offset, 2);
+
+@mixin container() {
+  width: 100%;
+  max-width: rem($container_max_width + 40);
+  margin: 0 auto;
+  padding-left: rem(20);
+  padding-right: rem(20);
+  @include sm-block() {
+    max-width: rem($container_max_width + 64);
+    padding-left: rem(32);
+    padding-right: rem(32);
+  }
+  @include md-block() {
+    max-width: rem($container_max_width + 96);
+    padding-left: rem(48);
+    padding-right: rem(48);
+  }
+}
+
+@mixin row-offsets(){
+  margin-left: rem(($offset_one_side * -1));
+  margin-right: rem(($offset_one_side * -1));
+}
+
+@mixin row-offsets-full(){
+  margin: rem(($offset_one_side * -1));
+}
+
+@mixin col-offsets($type){
+  #{$type}-left: rem($offset_one_side);
+  #{$type}-right: rem($offset_one_side);
+}
+
+@mixin col-offsets-full($type){
+  #{$type}: rem($offset_one_side);
+}
+
+@mixin row-flex(){
+  display: flex;
+  flex-wrap: wrap;
+  @include row-offsets();
+}
+
+@mixin row-flex-full(){
+  display: flex;
+  flex-wrap: wrap;
+  @include row-offsets-full();
+}
+
+@mixin row-float(){
+  @include row-offsets();
+  @include clearfix();
+}
+
+@mixin col(){
+  word-wrap: break-word;
+  @include col-offsets(margin);
+}
+
+@mixin col-full(){
+  word-wrap: break-word;
+  @include col-offsets-full(margin);
+}
+
+@mixin col-float(){
+  float: left;
+}
+
+@mixin shift-left($n){
+  $val: sassMath(100%, $columns) * $n;
+  margin-left: #{calc(#{$val} + #{rem($offset_one_side)})};
+}
+
+@mixin shift-right($n){
+  $val: sassMath(100%, $columns) * $n;
+  margin-right: #{calc(#{$val} + #{rem($offset_one_side)})};
+}
+
+@mixin size($n){
+  $val: sassMath(100%, $columns)  * $n;
+  width: #{calc(#{$val} - #{rem($offset)})};
+}
+
+
+@mixin xs($name, $value){
+  @media screen and (min-width: #{rem($break_xs)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin xs-block(){
+  @media screen and (min-width: #{rem($break_xs)}){
+    @content;
+  }
+}
+
+@mixin sm($name, $value){
+  @media screen and (min-width: #{rem($break_sm)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin sm-block(){
+  @media screen and (min-width: #{rem($break_sm)}){
+    @content;
+  }
+}
+
+@mixin md($name, $value){
+  @media screen and (min-width: #{rem($break_md)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin md-block(){
+  @media screen and (min-width: #{rem($break_md)}){
+    @content;
+  }
+}
+
+@mixin lg($name, $value){
+  @media screen and (min-width: #{rem($break_lg)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin lg-block(){
+  @media screen and (min-width: #{rem($break_lg)}){
+    @content;
+  }
+}
+
+@mixin xl($name, $value){
+  @media screen and (min-width: #{rem($break_xl)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin xl-block(){
+  @media screen and (min-width: #{rem($break_xl)}){
+    @content;
+  }
+}
+
+@mixin from($min_width){
+  @media screen and (min-width: #{rem($min_width)}){
+    @content;
+  }
+}
+
+@mixin to($max_width){
+  @media screen and (max-width: #{rem($max_width - 1)}){
+    @content;
+  }
+}
+
+@mixin from-to($min_width, $max_width){
+  @media screen and (min-width: #{rem($min_width)}) and (max-width: #{rem($max_width - 1)}){
+    @content;
+  }
+}
+
+@mixin clearfix(){
+  &::after{
+    display: block;
+    content: "";
+    clear: both;
+  }
+}

@@ -1,0 +1,24 @@
+$color_white: #FFFFFF;
+$color_black: #000000;
+$color_text: $color_black;
+$color_accent: blue;
+
+$color_error: #FF5657;
+$color_error_text: #FF5657;
+$color_warning: #FF9500;
+$color_success: #1EB000;
+
+$transition_duration: .3s;
+$transition_timing_function: ease;
+
+$box_shadow: rem(4) rem(4) rem(18) rgba($color_black, 0.2);
+
+$focus_visible_box_shadow: 0 0 0 rem(4) rgba($color_accent, .4);
+
+$color_picture_loading: #acb0b7;
+
+$body_font_size: rem(16);
+$body_line_height: rem(24);
+
+$font_title: 'Arial', sans-serif;
+$font_text: 'Arial', sans-serif;

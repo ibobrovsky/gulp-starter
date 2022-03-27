@@ -1,0 +1,108 @@
+*, *:after,*:before {
+  box-sizing: border-box;
+}
+*, *:focus {
+  outline: none;
+}
+
+html {
+  font-family: sans-serif;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: $font_text;
+  font-size: $body_font_size;
+  line-height: $body_line_height;
+  background-color: $color_white;
+  color: $color_text;
+  display: block;
+  width: 100%;
+  min-width: rem($break_xs);
+  min-height: 100%;
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+button,
+html input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  -webkit-appearance: button;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  border-style: none;
+  height: auto;
+  width: auto;
+  max-width: 100%;
+}
+
+video {
+  display: block;
+}
+
+a {
+  display: block;
+  text-decoration: none;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+a, button {
+  outline: 0;
+  &:focus {
+    outline: none;
+  }
+  &::-moz-focus-inner {
+    padding: 0;
+    border: 0;
+  }
+}
+
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+  font-family: $font_title;
+  font-style: normal;
+  font-weight: bold;
+  color: $color_text;
+  margin: 0;
+}
+
+p, figure {
+  margin: 0;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+blockquote {
+  margin: 0;
+}
+
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+.js-focus-visible .focus-visible {
+  box-shadow: $focus_visible_box_shadow;
+  outline: none;
+}
+
+.visually-hidden {
+  @include visually-hidden();
+}

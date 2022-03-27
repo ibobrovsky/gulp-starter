@@ -1,0 +1,72 @@
+@keyframes ssc-loading {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  picture {
+    display: block;
+    width: inherit;
+    height: inherit;
+  }
+  img {
+    width: inherit;
+    height: inherit;
+    font-size: 0;
+    @include transition(opacity, visibility);
+  }
+
+  &--loading {
+    position: relative;
+    background-color: $color_picture_loading;
+    overflow: hidden;
+    z-index: 1;
+    &:after {
+      content: '';
+      @include abs-full();
+      background: -webkit-gradient(
+                      linear,
+                      left top,
+                      right top,
+                      from(transparent),
+                      color-stop(rgba(255, 255, 255, 0.3)),
+                      to(transparent)
+      );
+      background: linear-gradient(
+                      90deg,
+                      transparent,
+                      rgba(255, 255, 255, 0.3),
+                      transparent
+      );
+      animation: ssc-loading 1.3s infinite;
+      transform: translateX(-100%);
+      z-index: 1;
+    }
+    img {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  &--cover {
+    img {
+      object-fit: cover;
+    }
+  }
+
+  &--ratio {
+    position: relative;
+    @include responsive-ratio(30, 17);
+    picture {
+      @include abs-full();
+      z-index: 2;
+    }
+  }
+}

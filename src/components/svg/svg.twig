@@ -1,0 +1,8 @@
+{% macro svg(props = {}) %}
+    {% set sizeClassName = props.size ? (' svg--size-' ~ props.size) : '' %}
+    <span class="svg{{ sizeClassName }}{% if props.className %} {{ props.className }}{% endif %}" aria-hidden="true">
+        <svg class="svg__icon">
+            <use xlink:href="{{ props.link }}"></use>
+        </svg>
+    </span>
+{% endmacro %}

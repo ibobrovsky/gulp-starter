@@ -1,0 +1,15 @@
+{% extends "_app.twig" %}
+
+{% block layout %}
+    <div class="app">
+        {{ header({
+            global: global
+        }) }}
+        <main class="app__main">
+            {% block page %}{% endblock %}
+        </main>
+        {{ footer({
+            global: global
+        }) }}
+    </div>
+{% endblock %}
