@@ -1,19 +1,28 @@
-import { DomHelper } from '../../helpers/DomHelper'
+import {
+  setWindowWidth,
+  setWindowHeight,
+  setScrollTop,
+  calculateWindowWidth,
+  calculateWindowHeight,
+  calculateScrollTop,
+  domEventEmitter,
+  DomEvents,
+} from '../../helpers/dom'
 
 const handler = () => {
-  DomHelper.setWindowWidth(DomHelper.calculateWindowWidth())
-  DomHelper.setWindowHeight(DomHelper.calculateWindowHeight())
-  DomHelper.setScrollTop(DomHelper.calculateScrollTop())
+  setWindowWidth(calculateWindowWidth())
+  setWindowHeight(calculateWindowHeight())
+  setScrollTop(calculateScrollTop())
 }
 
 const resizeHandler = () => {
   handler()
-  DomHelper.$emit('resize')
+  domEventEmitter.emit(DomEvents.RESIZE)
 }
 
 const scrollHandler = () => {
   handler()
-  DomHelper.$emit('scroll')
+  domEventEmitter.emit(DomEvents.SCROLL)
 }
 
 document.addEventListener('scroll', scrollHandler)

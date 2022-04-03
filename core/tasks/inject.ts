@@ -1,16 +1,16 @@
 import { ITask } from '../index'
 import { IS_DEV } from '../utils/env'
-import PathsHelper from '../helpers/PathsHelper'
+import { distDir, joinDistDir } from '../utils/path'
 import { dest, src } from 'gulp'
-import { plumber } from './utils/plumber'
-import { pipe } from './utils/pipe'
-// @ts-ignore
-import htmlmin from 'gulp-htmlmin'
-import { appConfig, defaultConfig } from '../config'
-import HTMLBeautify from './utils/HTMLBeautify'
-import injectToHTML from './utils/injectToHTML'
+import { plumber } from '../utils/tasks/plumber'
 import path from 'path'
+import { pipe } from '../utils/tasks/pipe'
 import store from '../store'
+import injectToHTML from '../utils/tasks/injectToHTML'
+import { config } from '../config'
+// @ts-ignore
+import gulpHtmlmin from 'gulp-htmlmin'
+import HTMLBeautify from '../utils/tasks/HTMLBeautify'
 
 interface InjectTask extends ITask {
   inject: () => NodeJS.ReadWriteStream
@@ -19,15 +19,17 @@ interface InjectTask extends ITask {
   dest: () => NodeJS.ReadWriteStream
 }
 
+export const injectTaskName = 'inject:data'
+
 const injectTask: InjectTask = {
-  build: 4,
-  name: 'inject:data',
+  build: 3,
+  name: injectTaskName,
   run(done) {
     if (IS_DEV) {
       return done()
     }
 
-    const files = PathsHelper.joinDistDir('*.html')
+    const files = joinDistDir('*.html')
 
     return src(files)
       .pipe(plumber())
@@ -41,7 +43,7 @@ const injectTask: InjectTask = {
       (file) => {
         const fileContent = String(file.contents)
         const name = path.basename(file.path, path.extname(file.path))
-        const page = store.pages.items[name]
+        const page = store.pages.getItem(name)
         if (!page) {
           return
         }
@@ -53,23 +55,20 @@ const injectTask: InjectTask = {
     )
   },
   htmlmin() {
-    return htmlmin({
+    return gulpHtmlmin({
       collapseWhitespace: true,
       removeComments: false,
     })
   },
   beautify() {
-    if (
-      IS_DEV ||
-      (typeof appConfig.HTMLBeautify === 'boolean' && !appConfig.HTMLBeautify)
-    ) {
+    if (!config.HTMLBeautify) {
       return pipe()
     }
 
     return pipe(HTMLBeautify, null, 'HTMLBeautify')
   },
   dest() {
-    return dest(PathsHelper.distDir)
+    return dest(distDir)
   },
 }
 

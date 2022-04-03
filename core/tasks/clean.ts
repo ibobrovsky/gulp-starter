@@ -1,12 +1,14 @@
 import { ITask } from '../index'
 import del from 'del'
-import PathsHelper from '../helpers/PathsHelper'
+import { distDir } from '../utils/path'
+
+export const cleanTaskName = 'clean'
 
 const cleanTask: ITask = {
   build: 0,
-  name: 'clean',
+  name: cleanTaskName,
   run() {
-    return del([PathsHelper.distDir, PathsHelper.coreTmpDir])
+    return del([distDir])
   },
 }
 

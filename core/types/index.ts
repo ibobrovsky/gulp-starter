@@ -2,8 +2,8 @@ export type TypeNotRequired<T extends object> = {
   [K in keyof T]?: T[K]
 }
 
-export interface IJsonData {
-  [key: string]: string | number | boolean | Date | IJsonData
+export interface JsonData {
+  [key: string]: string | number | boolean | Date | JsonData
 }
 
 export type DefaultFile = {
@@ -21,12 +21,9 @@ type InjectDepsFile =
       preload?: boolean
     }
 
-type IImportDepsFile = string
-
 interface DepsPlugin {
   from?: string
   inject?: InjectDepsFile | InjectDepsFile[]
-  import?: IImportDepsFile | IImportDepsFile[]
 }
 
 export interface DepsLinks {
@@ -49,5 +46,6 @@ export interface Deps {
   plugins?: DepsPlugin[]
   links?: DepsLinks[]
   assets?: string | string[]
-  svg?: string | string[]
+  symbols?: string | string[]
+  components?: string | string[]
 }

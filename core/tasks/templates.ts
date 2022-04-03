@@ -1,50 +1,58 @@
 import { ITask } from '../index'
+import { distDir, joinComponentsDir, joinPageDir } from '../utils/path'
+import { plumber } from '../utils/tasks/plumber'
+import { dest, lastRun, src } from 'gulp'
+import { scanComponents } from '../utils/tasks/scanComponents'
 import store from '../store'
-import PathsHelper from '../helpers/PathsHelper'
-import scanComponents from './utils/scanComponents'
-import { plumber } from './utils/plumber'
-import { src, dest, lastRun } from 'gulp'
-import { pipe } from './utils/pipe'
 import path, { basename, dirname, extname, relative } from 'path'
-import { appConfig, defaultConfig } from '../config'
+import { pipe } from '../utils/tasks/pipe'
+import { config } from '../config'
 import { slashNormalize } from '../utils/slashNormalize'
 import { toCamelCase } from '../utils/toCamelCase'
 // @ts-ignore
 import gulpTwig from 'gulp-twig'
 import { mergeOptions } from '../utils/mergeOptions'
-import parseHtml from './utils/parseHtml'
 import { IS_DEV } from '../utils/env'
+import parseHtml from '../utils/tasks/parseHtml'
 // @ts-ignore
-import htmlmin from 'gulp-htmlmin'
-import HTMLBeautify from './utils/HTMLBeautify'
+import gulpHtmlmin from 'gulp-htmlmin'
+import HTMLBeautify from '../utils/tasks/HTMLBeautify'
 import { SrcOptions } from 'vinyl-fs'
-import { isFile } from '../utils/isFile'
-import editTime from './utils/editTime'
-import { TaskCallback } from 'undertaker'
 import File from 'vinyl'
+import getComponentNameFromPath from '../utils/tasks/getComponentNameFromPath'
+import { isFile } from '../utils/isFile'
+import editTime from '../utils/tasks/editTime'
+import { stylesTaskName } from './styles'
+import { scriptsTaskName } from './scripts'
+import { assetsTaskName } from './assets'
+import { symbolTaskName } from './symbol'
+import { fontsTaskName } from './fonts'
+import { imagesTaskName } from './images'
 
 interface TemplatesTask extends ITask {
   globs: string
+  extName: string
   injectComponentsInTemplates: () => NodeJS.ReadWriteStream
   compile: () => NodeJS.ReadWriteStream
   parse: () => NodeJS.ReadWriteStream
   htmlmin: () => NodeJS.ReadWriteStream
   beautify: () => NodeJS.ReadWriteStream
   dest: () => NodeJS.ReadWriteStream
+  since: (file: File) => SrcOptions['since']
   checkDeps: (file: string) => void
   checkIsOnPage: (file: string) => void
-  ready: (done: TaskCallback) => ReturnType<TaskCallback>
-  since: (file: File) => number | Date | undefined
 }
+
+export const templatesTaskName = 'compile:templates'
 
 const templatesTask: TemplatesTask = {
   build: 1,
-  name: 'compile:templates',
+  name: templatesTaskName,
+  extName: '.twig',
   globs: '!(_*).twig',
-  run(this: TemplatesTask, done) {
+  run(done) {
     scanComponents()
-    const files = PathsHelper.joinPageDir(this.globs)
-    const ready = this.ready.bind(this, done)
+    const files = joinPageDir(this.globs)
 
     const options: SrcOptions = {
       // @ts-ignore
@@ -59,27 +67,30 @@ const templatesTask: TemplatesTask = {
       .pipe(this.htmlmin())
       .pipe(this.beautify())
       .pipe(this.dest())
-      .on('end', ready)
+      .on('end', () => {
+        store.pages.clearDepsChanged()
+        done()
+      })
   },
   watch() {
     return [
       {
-        files: PathsHelper.joinPageDir(this.globs),
+        files: joinPageDir(this.globs),
         tasks: this.name,
         options: {
           delay: 500,
         },
       },
       {
-        files: PathsHelper.joinComponentsDir('**', 'deps.ts'),
+        files: joinComponentsDir('**', 'deps.ts'),
         tasks: [
-          'compile:templates',
-          'compile:joinScripts',
-          'compile:scriptsTs',
-          'compile:styles',
-          'copy:assets',
-          'copy:fonts',
-          'copy:images',
+          this.name,
+          stylesTaskName,
+          scriptsTaskName,
+          assetsTaskName,
+          symbolTaskName,
+          fontsTaskName,
+          imagesTaskName,
         ],
         options: {
           delay: 250,
@@ -90,7 +101,7 @@ const templatesTask: TemplatesTask = {
         },
       },
       {
-        files: PathsHelper.joinComponentsDir('**', '(data.json|*.twig)'),
+        files: joinComponentsDir('**', `(data.json|*${this.extName})`),
         on: {
           event: 'change',
           handler: this.checkIsOnPage.bind(this),
@@ -99,79 +110,66 @@ const templatesTask: TemplatesTask = {
     ]
   },
   since(file) {
-    const page = path.basename(file.path)
-    const pageInDeps = store.pages.depsChanged.includes(page)
-    return pageInDeps ? undefined : lastRun(this.name)
+    const pageName = path.basename(file.path)
+    return store.pages.hasDepChanged(pageName) ? undefined : lastRun(this.name)
   },
-  checkDeps(file) {
-    const componentName = path.dirname(file).split(path.sep).pop()
-
-    Object.keys(store.pages.items).forEach((pageName) => {
+  checkDeps(filePath) {
+    const componentName = getComponentNameFromPath(filePath)
+    store.pages.getItems().forEach(({ name, components }) => {
       if (
-        pageName ===
-        (appConfig.build?.bundleName || defaultConfig.build.bundleName)
+        name === config.build.bundleName ||
+        !componentName ||
+        !components.includes(componentName)
       ) {
         return
       }
 
+      store.pages.setDepChanged(name + this.extName)
+    })
+  },
+  /**
+   * Следит за изменением фалов ('data.json' и '*.twig') компонентов
+   * Страница обновится если у нее есть изменяемый компонент
+   * @param filePath
+   */
+  checkIsOnPage(filePath) {
+    let componentName = getComponentNameFromPath(filePath)
+
+    store.pages.getItems().forEach(({ name, path, components }) => {
       if (
-        componentName &&
-        store.pages.items[pageName]?.components?.includes(componentName)
+        name === config.build.bundleName ||
+        !componentName ||
+        !components.includes(componentName)
       ) {
-        pageName = pageName + '.twig'
-        if (!store.pages.depsChanged.includes(pageName)) {
-          store.pages.depsChanged.push(pageName)
-        }
+        return
+      }
+
+      if (isFile(path)) {
+        return editTime(path)
       }
     })
   },
-  checkIsOnPage(file) {
-    let name = path.basename(file)
-    if (['data.json', 'deps.ts'].includes(name)) {
-      const newName = path.dirname(file).split(path.sep).pop()
-      if (newName) {
-        name = newName
-      }
-    } else {
-      name = path.basename(file, path.extname(file))
+  /**
+   * Подключает компоненты на страницы
+   */
+  injectComponentsInTemplates() {
+    if (!config.importComponentsInPages) {
+      return pipe()
     }
 
-    Object.keys(store.pages.items).forEach((pageName) => {
-      if (
-        pageName ===
-        (appConfig.build?.bundleName || defaultConfig.build.bundleName)
-      ) {
-        return
-      }
-
-      if (store.pages.items[pageName]?.components?.includes(name)) {
-        const file = PathsHelper.joinPageDir(pageName + '.twig')
-        if (isFile(file)) {
-          return editTime(file)
-        }
-      }
-    })
-  },
-  injectComponentsInTemplates() {
     return pipe(
       (file) => {
         const fileExt = extname(file.path)
-        if (
-          !(
-            appConfig.importComponentsInPages ||
-            defaultConfig.importComponentsInPages
-          ) ||
-          fileExt !== `.twig`
-        ) {
+
+        if (fileExt !== this.extName) {
           return
         }
 
         let importedComponents = ''
-        const components = store.components
+        const components = store.components.getItems()
 
-        Object.keys(components).forEach((componentName) => {
-          const component = components[componentName]
-          if (!component || !component.template) {
+        components.forEach((component) => {
+          if (!component.template) {
             return
           }
 
@@ -195,10 +193,10 @@ const templatesTask: TemplatesTask = {
   compile() {
     return gulpTwig(
       mergeOptions(
-        appConfig.twig || defaultConfig.twig,
+        config.twig,
         {
           data: {
-            global: store.data,
+            global: store.pages.getData(),
           },
         },
         true,
@@ -206,7 +204,6 @@ const templatesTask: TemplatesTask = {
     )
   },
   parse() {
-    store.pages.items = {}
     return pipe(parseHtml, null, 'parseHtml')
   },
   htmlmin() {
@@ -214,28 +211,20 @@ const templatesTask: TemplatesTask = {
       return pipe()
     }
 
-    return htmlmin({
+    return gulpHtmlmin({
       collapseWhitespace: true,
       removeComments: false,
     })
   },
   beautify() {
-    if (
-      IS_DEV ||
-      (typeof appConfig.HTMLBeautify === 'boolean' && !appConfig.HTMLBeautify)
-    ) {
+    if (IS_DEV || !config.HTMLBeautify) {
       return pipe()
     }
 
     return pipe(HTMLBeautify, null, 'HTMLBeautify')
   },
   dest() {
-    return dest(PathsHelper.distDir)
-  },
-  ready(done) {
-    store.pages.depsChanged = []
-
-    return done()
+    return dest(distDir)
   },
 }
 

@@ -1,12 +1,13 @@
-import { TaskFunction, watch, parallel, series } from 'gulp'
+import { TaskFunction, watch, parallel, series, Globs, WatchOptions } from 'gulp'
+import type { Task } from 'undertaker'
 import { readdirSync } from 'fs'
 import { extname } from 'path'
-import type { Task } from 'undertaker'
-import LogHelper from './helpers/Log'
-import PathsHelper from './helpers/PathsHelper'
-import { requireFile } from './utils/requireFile'
+import { logError } from './utils/log'
+import { joinTasksDir, tasksDir } from './utils/path'
 import { IS_DEV } from './utils/env'
+import { requireFile } from './utils/requireFile'
 import { slashNormalize } from './utils/slashNormalize'
+import { isArray, isString } from './utils/type'
 
 interface IExports {
   [name: string]: TaskFunction
@@ -15,11 +16,9 @@ interface IExports {
 type IBuilds = Array<TaskFunction[] | undefined>
 
 interface IWatcher {
-  files: string
+  files: Globs
   tasks?: string | string[] | TaskFunction
-  options?: {
-    delay?: number
-  }
+  options?: WatchOptions
   on?: {
     event: string
     handler: (...args: any[]) => void
@@ -47,24 +46,24 @@ class GulpBuilder {
       this.createDefaultTask()
       this.watch()
     } catch (e) {
-      LogHelper.logError(e)
+      logError(e)
     }
 
     return this.exports
   }
 
   protected init(): void {
-    readdirSync(PathsHelper.tasksDir).forEach((item) => {
+    readdirSync(tasksDir).forEach((item) => {
       if (extname(item) !== '.ts') {
         return
       }
-      const fileTask = requireFile<ITask>(PathsHelper.joinTasksDir(item))
+      const fileTask = requireFile<ITask>(joinTasksDir(item))
       const { name, run, watch, build, disabled } = fileTask
       if (disabled) {
         return
       }
       if (this.exports[name]) {
-        return LogHelper.logError(`The task [${name}] already exist!`)
+        return logError(`The task [${name}] already exist!`)
       }
 
       this.exports[name] = run.bind(fileTask)
@@ -105,8 +104,12 @@ class GulpBuilder {
     }
 
     this.watchers.forEach((item) => {
-      const files = slashNormalize(item.files)
-      const tasks = Array.isArray(item.tasks) ? item.tasks : [item.tasks]
+      if (isString(item.files)) {
+        item.files = [item.files]
+      }
+
+      const files = isArray(item.files) ? item.files.map(s => slashNormalize(s)) : []
+      const tasks = isArray(item.tasks) ? item.tasks : [item.tasks]
 
       const options: IWatcher['options'] = item.options
         ? JSON.parse(JSON.stringify(item.options))

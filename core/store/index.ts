@@ -1,17 +1,15 @@
-import components from './modules/components'
-import data from './modules/data'
-import pages from './modules/pages'
-import svg from './modules/svg'
-import assets from './modules/assets'
-import fonts from './modules/fonts'
-import images from './modules/images'
+import * as components from './components'
+import * as pages from './pages'
+import * as assets from './assets'
+import * as symbols from './symbols'
+import * as fonts from './fonts'
+import * as images from './images'
 
 const store = {
   components,
-  data,
   pages,
-  svg,
   assets,
+  symbols,
   fonts,
   images,
 }

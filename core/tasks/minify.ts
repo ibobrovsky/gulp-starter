@@ -1,34 +1,30 @@
 import { ITask } from '../index'
+import { config } from '../config'
 import gulpImagemin from 'gulp-imagemin'
 import { Plugin } from 'imagemin'
-import { appConfig, defaultConfig, ImageminConfig } from '../config'
-import { mergeOptions } from '../utils/mergeOptions'
-import { dest, src } from 'gulp'
+import { joinDistDir } from '../utils/path'
 import { IS_DEV } from '../utils/env'
-import { plumber } from './utils/plumber'
-import PathsHelper from '../helpers/PathsHelper'
+import { dest, src } from 'gulp'
+import { plumber } from '../utils/tasks/plumber'
 
 interface MinifyTask extends ITask {
   imagemin: () => NodeJS.ReadWriteStream
   dest: () => NodeJS.ReadWriteStream
 }
 
-type PluginsMap = {
-  [K in keyof ImageminConfig]: string
-}
+export const minifyTaskName = 'minify:images'
 
 const minifyTask: MinifyTask = {
-  build: 5,
-  name: 'minify:images',
+  build: 4,
+  name: minifyTaskName,
   run(done) {
-    const files: string[] = []
-
-    if (!appConfig.imagemin) {
+    if (!config.imagemin || IS_DEV) {
       return done()
     }
+    const files: string[] = []
 
     let minify: string[] = []
-    Object.keys(appConfig.imagemin).forEach((key) => {
+    Object.keys(config.imagemin).forEach((key) => {
       // @ts-ignore
       if (!!config.imagemin[key]) {
         minify.push(key)
@@ -36,10 +32,10 @@ const minifyTask: MinifyTask = {
     })
 
     if (minify.length) {
-      files.push(PathsHelper.joinDistDir(`**/*.{${minify.join(',')}}`))
+      files.push(joinDistDir(`**/*.{${minify.join(',')}}`))
     }
 
-    if (IS_DEV || !files.length) {
+    if (!files.length) {
       return done()
     }
 
@@ -48,31 +44,20 @@ const minifyTask: MinifyTask = {
   imagemin() {
     const plugins: Plugin[] = []
 
-    const pluginsMap: PluginsMap = {
+    const pluginsMap = {
       svg: 'svgo',
       jpg: 'mozjpeg',
       png: 'optipng',
       gif: 'gifsicle',
     }
 
-    // @ts-ignore
-    Object.keys(pluginsMap).forEach((key: keyof PluginsMap) => {
-      if (!appConfig.imagemin?.[key]) {
+    Object.keys(pluginsMap).forEach((key) => {
+      if (!config.imagemin[key]) {
         return
       }
 
-      plugins.push(
-        // @ts-ignore
-        gulpImagemin[pluginsMap[key]](
-          typeof appConfig.imagemin[key] === 'boolean'
-            ? defaultConfig.imagemin[key]
-            : mergeOptions(
-                defaultConfig.imagemin[key],
-                appConfig.imagemin[key],
-                true,
-              ),
-        ),
-      )
+      // @ts-ignore
+      plugins.push(gulpImagemin[pluginsMap[key]](config.imagemin[key]))
     })
 
     return gulpImagemin(plugins, { verbose: true })

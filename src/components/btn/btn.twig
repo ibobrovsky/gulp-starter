@@ -1,12 +1,11 @@
-{% from '../svg/svg.twig' import svg %}
-
 {% macro btn(props = {}) %}
     {% set tag = props.link ? 'a' : 'button' %}
     <{{ tag }}
-        class="btn{% if props.className %} {{ props.className }}{% endif %}{% if props.size %} btn--size-{{ props.size }}{% endif %}{% if props.color %} btn--color-{{ props.color }}{% endif %}"
-        {% if props.disabled %}disabled{% endif %}
-        {% if props.link %}href="{{ props.link }}"{% endif %}
-        {% if props.label %}aria-label="{{ props.label }}"{% endif %}
+    class="btn{% if props.size %} btn--size-{{ props.size }}{% endif %}{% if props.color %} btn--color-{{ props.color }}{% endif %}{% if props.className %} {{ props.className }}{% endif %}"
+    {% if props.disabled %}disabled{% endif %}
+    {% if props.link %}href="{{ props.link }}"{% endif %}
+    {% if props.label %}aria-label="{{ props.label }}"{% endif %}
+    {% if props.onclick %}onclick="{{ props.onclick }}"{% endif %}
     >
         {{ props.content }}
     </{{ tag }}>

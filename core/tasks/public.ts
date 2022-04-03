@@ -1,29 +1,31 @@
 import { ITask } from '../index'
-import LogHelper from '../helpers/Log'
 import { existsSync, readdirSync } from 'fs'
-import PathsHelper from '../helpers/PathsHelper'
+import { distDir, joinPublicDir, publicDir } from '../utils/path'
 import { isFile } from '../utils/isFile'
-import { dest, lastRun, src } from 'gulp'
+import { logError } from '../utils/log'
 import { SrcOptions } from 'vinyl-fs'
-import { plumber } from './utils/plumber'
-import editTime from './utils/editTime'
+import { dest, lastRun, src } from 'gulp'
+import { plumber } from '../utils/tasks/plumber'
+import editTime from '../utils/tasks/editTime'
 
 interface PublicTask extends ITask {
   dest: () => NodeJS.ReadWriteStream
 }
 
+export const publicTaskName = 'copy:public'
+
 const publicTask: PublicTask = {
-  build: 3,
-  name: 'copy:public',
+  build: 2,
+  name: publicTaskName,
   run(done) {
-    if (!existsSync(PathsHelper.publicDir)) {
+    if (!existsSync(publicDir)) {
       return done()
     }
     const files: string[] = []
 
     try {
-      readdirSync(PathsHelper.publicDir).forEach((file) => {
-        const filePath = PathsHelper.joinPublicDir(file)
+      readdirSync(publicDir).forEach((file) => {
+        const filePath = joinPublicDir(file)
         if (!isFile(filePath)) {
           return
         }
@@ -31,7 +33,7 @@ const publicTask: PublicTask = {
         files.push(filePath)
       })
     } catch (e) {
-      LogHelper.logError(e)
+      logError(e)
     }
 
     if (!files.length) {
@@ -47,7 +49,7 @@ const publicTask: PublicTask = {
   watch() {
     return [
       {
-        files: PathsHelper.joinPublicDir('*.*'),
+        files: joinPublicDir('*.*'),
         tasks: this.name,
         on: {
           event: 'add',
@@ -57,7 +59,7 @@ const publicTask: PublicTask = {
     ]
   },
   dest() {
-    return dest(PathsHelper.distDir)
+    return dest(distDir)
   },
 }
 

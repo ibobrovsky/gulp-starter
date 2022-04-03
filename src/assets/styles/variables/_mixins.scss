@@ -4,6 +4,18 @@
   transition-timing-function: $transition_timing_function;
 }
 
+@mixin transitionSlow($props...) {
+  transition-property: $props;
+  transition-duration: $transition_duration_slow;
+  transition-timing-function: $transition_timing_function;
+}
+
+@mixin transitionFast($props...) {
+  transition-property: $props;
+  transition-duration: $transition_duration_fast;
+  transition-timing-function: $transition_timing_function;
+}
+
 @mixin pseudo($display: block, $pos: absolute, $content: ''){
   content: $content;
   display: $display;

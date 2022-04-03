@@ -1,38 +1,43 @@
 import { ITask } from '../index'
-import { appConfig, defaultConfig, distConfig } from '../config'
+import {
+  IStyles,
+  getBundleStyles,
+  getSplitStyles,
+} from '../utils/tasks/getStyles'
 import { TaskCallback } from 'undertaker'
 import { IS_DEV } from '../utils/env'
-import getStyles from './utils/getStyles'
+import { config } from '../config'
 import { dest, src } from 'gulp'
-import { plumber } from './utils/plumber'
-import { pipe } from './utils/pipe'
+import { plumber } from '../utils/tasks/plumber'
+import { pipe } from '../utils/tasks/pipe'
+import injectStyleMixins from '../utils/tasks/injectStyleMixins'
+import vinyl from 'vinyl'
+import {
+  joinComponentsDir,
+  joinRootDir,
+  joinDistDir,
+  rootDir,
+} from '../utils/path'
 import { mergeOptions } from '../utils/mergeOptions'
-import injectStyleMixins from './utils/injectStyleMixins'
 import dartSass from 'sass'
 import gulpSass from 'gulp-sass'
 import gulpPostCss from 'gulp-postcss'
 import postcssUrl from 'postcss-url'
-import parseCssUrl from './utils/parseCssUrl'
+import parseCssUrl from '../utils/tasks/parseCssUrl'
 import gulpConcat from 'gulp-concat'
 import path from 'path'
-import PathsHelper from '../helpers/PathsHelper'
 import autoprefixer from 'autoprefixer'
+import { isFile } from '../utils/isFile'
 // @ts-ignore
 import stylefmt from 'stylefmt'
-import { isFile } from '../utils/isFile'
 import postcssSprites from 'postcss-sprites'
+import isImageSprite from '../utils/tasks/isImageSprite'
 import gulpIf from 'gulp-if'
 // @ts-ignore
 import gulpCssnano from 'gulp-cssnano'
-import vinyl from 'vinyl'
 import gulpRename from 'gulp-rename'
-import isSprite from './utils/isSprite'
 
 const sass = gulpSass(dartSass)
-
-interface IStyles {
-  [key: string]: string[]
-}
 
 interface StylesTask extends ITask {
   compileBundles: (styles: IStyles) => ReturnType<TaskCallback>
@@ -54,34 +59,34 @@ interface StylesTask extends ITask {
   forMinify: (fs: vinyl) => boolean
 }
 
+export const stylesTaskName = 'compile:styles'
+
 const stylesTask: StylesTask = {
-  build: 3,
-  name: 'compile:styles',
-  run(this: StylesTask, done) {
-    const bundleName =
-      appConfig.build?.bundleName || defaultConfig.build.bundleName
-    const splitBundleInPages =
-      appConfig.build?.splitBundleInPages ||
-      defaultConfig.build.splitBundleInPages
+  build: 2,
+  name: stylesTaskName,
+  run(done) {
+    const splitBundleCss =
+      typeof config.build.splitBundle === 'boolean'
+        ? config.build.splitBundle
+        : config.build.splitBundle.includes('css')
 
-    const styles = getStyles()
+    const bundleName = config.build.bundleName
 
-    if (IS_DEV || !splitBundleInPages) {
-      const files = styles[bundleName] || []
-      return this.compileBundle(files, bundleName, done)
+    if (IS_DEV || !splitBundleCss) {
+      return this.compileBundle(getBundleStyles(), bundleName, done)
     }
 
-    return this.compileBundles(styles)
+    return this.compileBundles(getSplitStyles())
   },
   watch() {
     return [
       {
-        files: PathsHelper.joinComponentsDir(`*{.css,.scss`),
+        files: joinComponentsDir('**', `*{.css,.scss}`),
         tasks: this.name,
       },
     ]
   },
-  compileBundles(this: StylesTask, styles) {
+  compileBundles(styles) {
     const promises: Promise<any>[] = []
     Object.keys(styles).forEach((bundleName) => {
       const files = styles[bundleName]
@@ -96,13 +101,18 @@ const stylesTask: StylesTask = {
     })
     return Promise.all(promises)
   },
-  compileBundle(this: StylesTask, files, bundleName, done) {
-    if (files.length === 0) {
+  compileBundle(files, bundleName, done) {
+    if (!files.length) {
       return done()
     }
 
+    const sourcemaps =
+      typeof config.build.sourcemaps === 'boolean'
+        ? config.build.sourcemaps
+        : config.build.sourcemaps.includes('css')
+
     const options = {
-      sourcemaps: appConfig.build?.sourcemaps || defaultConfig.build.sourcemaps,
+      sourcemaps,
     }
 
     return src(files, options)
@@ -119,14 +129,14 @@ const stylesTask: StylesTask = {
       .on('end', done)
   },
   addMixins(this: StylesTask) {
-    if (!appConfig.stylesMixins?.length) {
+    if (!config.stylesMixins.length) {
       return pipe()
     }
 
     return pipe(injectStyleMixins, null, 'injectStyleMixins')
   },
   compile(this: StylesTask) {
-    return sass(mergeOptions({}, appConfig.sass || defaultConfig.sass))
+    return sass(mergeOptions({}, config.sass))
   },
   parseURLs(this: StylesTask) {
     return gulpPostCss([
@@ -138,37 +148,23 @@ const stylesTask: StylesTask = {
   },
   concat(bundleName) {
     return gulpConcat({
-      path: path.join(PathsHelper.rootDir, `${bundleName}.css`),
+      path: path.join(rootDir, `${bundleName}.css`),
     })
   },
   postcss(bundleName) {
     const plugins: any[] = []
 
-    if (appConfig.build?.autoprefixer !== false) {
-      const defaultOverrideBrowserslist =
-        typeof defaultConfig.build.autoprefixer === 'boolean'
-          ? []
-          : typeof defaultConfig.build.autoprefixer === 'string'
-          ? [defaultConfig.build.autoprefixer]
-          : defaultConfig.build.autoprefixer
-
-      let overrideBrowserslist: string | string[] = []
-      if (appConfig.build?.autoprefixer === true) {
-        overrideBrowserslist = defaultOverrideBrowserslist
-      } else if (typeof appConfig.build?.autoprefixer !== 'undefined') {
-        overrideBrowserslist = appConfig.build.autoprefixer
-      }
-
+    if (config.autoprefixer) {
       plugins.push(
         autoprefixer({
           remove: false,
-          overrideBrowserslist,
+          overrideBrowserslist: config.autoprefixer,
         }),
       )
     }
 
     if (!IS_DEV) {
-      const stylelintrcFile = PathsHelper.joinRootDir('.stylelintrc')
+      const stylelintrcFile = joinRootDir('.stylelintrc')
       const stylefmtOptions: { configFile?: string } = {}
       if (isFile(stylelintrcFile)) {
         stylefmtOptions.configFile = stylelintrcFile
@@ -182,8 +178,8 @@ const stylesTask: StylesTask = {
     // @ts-ignore
     return postcssSprites({
       spriteName,
-      spritePath: PathsHelper.joinDistDir(distConfig.images),
-      stylesheetPath: PathsHelper.joinDistDir(distConfig.styles),
+      spritePath: joinDistDir(config.dist.images),
+      stylesheetPath: joinDistDir(config.dist.styles),
       spritesmith: {
         padding: 1,
         algorithm: 'binary-tree',
@@ -198,7 +194,7 @@ const stylesTask: StylesTask = {
       retina: true,
       verbose: false,
       filterBy: (image: any) => {
-        if (isSprite(image?.path || '')) {
+        if (isImageSprite(image?.path || '')) {
           return Promise.resolve()
         }
 
@@ -221,30 +217,12 @@ const stylesTask: StylesTask = {
     })
   },
   dest(sourcemaps) {
-    return dest(PathsHelper.joinDistDir(distConfig.styles), {
+    return dest(joinDistDir(config.dist.styles), {
       sourcemaps: sourcemaps ? '.' : undefined,
     })
   },
   cssnano() {
-    return gulpIf(
-      this.forMinify,
-      gulpCssnano(
-        mergeOptions(
-          {
-            reduceTransforms: false,
-            discardUnused: false,
-            convertValues: false,
-            normalizeUrl: false,
-            autoprefixer: false,
-            reduceIdents: false,
-            mergeIdents: false,
-            zindex: false,
-            calc: false,
-          },
-          appConfig.cssNano || defaultConfig.cssNano,
-        ),
-      ),
-    )
+    return gulpIf(this.forMinify, gulpCssnano(config.cssNano))
   },
   rename() {
     return gulpIf(

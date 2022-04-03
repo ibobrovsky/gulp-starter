@@ -1,17 +1,16 @@
 import { HTMLBeautifyOptions } from 'js-beautify'
 import { TypeNotRequired } from '../types'
-import { mergeOptions } from '../utils/mergeOptions'
-import LogHelper from '../helpers/Log'
-import PathsHelper from '../helpers/PathsHelper'
+import { joinSrcDir } from '../utils/path'
 import { isFile } from '../utils/isFile'
 import { requireFile } from '../utils/requireFile'
+import { logError } from '../utils/log'
 import { Plugin } from 'svgo'
 
 interface DistConfig {
   styles: string
   fonts: string
   images: string
-  svg: string
+  symbols: string
   scripts: string
   static: string
   favicons: string
@@ -19,12 +18,13 @@ interface DistConfig {
 
 interface BuildConfig {
   bundleName: string
-  splitBundleInPages: boolean
-  sourcemaps: boolean
-  autoprefixer: boolean | string | string[]
-  addVersions: boolean
+  templateBundleName: string
+  addVersion: boolean
+  sourcemaps: boolean | 'css' | 'js'
+  splitBundle: boolean | 'css' | 'js'
+  layoutComponents: string[]
   HTMLRoot: string
-  injectSvg: boolean
+  injectSymbols: boolean
 }
 
 interface TwigConfig {
@@ -39,8 +39,6 @@ interface TwigConfig {
   useFileContents?: boolean
   [key: string]: any
 }
-
-interface SassConfig {}
 
 interface ManifestConfig {
   appName?: string
@@ -72,6 +70,8 @@ interface ManifestConfig {
   }
   [key: string]: any
 }
+
+interface SassConfig {}
 
 interface ImageminSvgConfig {
   plugins: Plugin[]
@@ -124,35 +124,60 @@ export type ImageminConfig = {
 export interface DefaultConfig {
   stylesMixins: string | string[]
   globalStyles: string | string[]
-  globalScripts: string | string[]
   importComponentsInPages: boolean
-  HTMLBeautify: HTMLBeautifyOptions
-  build: BuildConfig
   dist: DistConfig
+  build: BuildConfig
   twig: TwigConfig
+  HTMLBeautify: false | HTMLBeautifyOptions
+  manifest: false | ManifestConfig
   sass: SassConfig
+  autoprefixer: false | string | string[]
   cssNano: Object
-  manifest: ManifestConfig
-  imagemin: ImageminConfig
+  imagemin: false | ImageminConfig
 }
 
 export interface AppConfig {
-  stylesMixins?: string | string[]
-  globalStyles?: string | string[]
-  globalScripts?: string | string[]
-  importComponentsInPages?: boolean
-  HTMLBeautify?: boolean | HTMLBeautifyOptions
-  build?: TypeNotRequired<BuildConfig>
+  stylesMixins?: DefaultConfig['stylesMixins']
+  globalStyles?: DefaultConfig['globalStyles']
+  importComponentsInPages?: DefaultConfig['importComponentsInPages']
   dist?: TypeNotRequired<DistConfig>
-  twig?: TwigConfig
-  sass?: SassConfig
-  cssNano?: Object
-  manifest?: TypeNotRequired<ManifestConfig>
-  imagemin?: ImageminConfig
+  build?: TypeNotRequired<BuildConfig>
+  twig?: DefaultConfig['twig']
+  HTMLBeautify?: DefaultConfig['HTMLBeautify']
+  manifest?: DefaultConfig['manifest']
+  sass?: DefaultConfig['sass']
+  autoprefixer?: DefaultConfig['autoprefixer']
+  cssNano?: DefaultConfig['cssNano']
+  imagemin?: DefaultConfig['imagemin']
 }
 
-export const defaultConfig: DefaultConfig = {
+const defaultConfig: DefaultConfig = {
+  stylesMixins: [],
+  globalStyles: [],
   importComponentsInPages: true,
+  build: {
+    bundleName: 'app',
+    templateBundleName: 'template',
+    addVersion: false,
+    sourcemaps: false,
+    splitBundle: false,
+    layoutComponents: [],
+    HTMLRoot: './',
+    injectSymbols: false,
+  },
+  dist: {
+    favicons: 'favicons',
+    scripts: 'scripts',
+    static: 'static',
+    styles: 'styles',
+    fonts: 'styles/fonts',
+    images: 'styles/images',
+    symbols: 'symbols',
+  },
+  twig: {
+    errorLogToConsole: true,
+    useFileContents: true,
+  },
   HTMLBeautify: {
     indent_size: 2,
     indent_char: ' ',
@@ -162,33 +187,6 @@ export const defaultConfig: DefaultConfig = {
     max_preserve_newlines: 2,
     content_unformatted: ['pre', 'textarea'],
   },
-  build: {
-    bundleName: 'app',
-    splitBundleInPages: false,
-    sourcemaps: true,
-    autoprefixer: ['last 3 versions', 'ie 10', 'ie 11'],
-    addVersions: false,
-    HTMLRoot: './',
-    injectSvg: false,
-  },
-  dist: {
-    favicons: 'favicons',
-    scripts: 'scripts',
-    static: 'static',
-    styles: 'styles',
-    fonts: 'styles/fonts',
-    images: 'styles/images',
-    svg: 'svg',
-  },
-  globalScripts: [],
-  stylesMixins: [],
-  globalStyles: [],
-  twig: {
-    errorLogToConsole: true,
-    useFileContents: true,
-  },
-  sass: {},
-  cssNano: {},
   manifest: {
     icons: {
       android: false,
@@ -201,6 +199,19 @@ export const defaultConfig: DefaultConfig = {
       yandex: false,
     },
     safariPinnedTab: '#424b5f',
+  },
+  sass: {},
+  autoprefixer: ['last 3 versions', 'ie 10', 'ie 11'],
+  cssNano: {
+    reduceTransforms: false,
+    discardUnused: false,
+    convertValues: false,
+    normalizeUrl: false,
+    autoprefixer: false,
+    reduceIdents: false,
+    mergeIdents: false,
+    zindex: false,
+    calc: false,
   },
   imagemin: {
     svg: {
@@ -236,27 +247,85 @@ export const defaultConfig: DefaultConfig = {
   },
 }
 
-export const appConfig: AppConfig = loadAppConfig() || {}
+const appConfig: AppConfig = loadAppConfig() || {}
 
-export const distConfig: DistConfig = {
-  favicons: appConfig.dist?.favicons || defaultConfig.dist.favicons,
-  fonts: appConfig.dist?.fonts || defaultConfig.dist.fonts,
-  images: appConfig.dist?.images || defaultConfig.dist.images,
-  svg: appConfig.dist?.svg || defaultConfig.dist.svg,
-  static: appConfig.dist?.static || defaultConfig.dist.static,
-  scripts: appConfig.dist?.scripts || defaultConfig.dist.scripts,
-  styles: appConfig.dist?.styles || defaultConfig.dist.styles,
+export const config: DefaultConfig = {
+  stylesMixins: appConfig.stylesMixins || defaultConfig.stylesMixins,
+  globalStyles: appConfig.globalStyles || defaultConfig.globalStyles,
+  importComponentsInPages:
+    typeof appConfig.importComponentsInPages === 'undefined'
+      ? defaultConfig.importComponentsInPages
+      : appConfig.importComponentsInPages,
+  dist: {
+    favicons: appConfig.dist?.favicons || defaultConfig.dist.favicons,
+    fonts: appConfig.dist?.fonts || defaultConfig.dist.fonts,
+    images: appConfig.dist?.images || defaultConfig.dist.images,
+    symbols: appConfig.dist?.symbols || defaultConfig.dist.symbols,
+    static: appConfig.dist?.static || defaultConfig.dist.static,
+    scripts: appConfig.dist?.scripts || defaultConfig.dist.scripts,
+    styles: appConfig.dist?.styles || defaultConfig.dist.styles,
+  },
+  build: !appConfig.build
+    ? defaultConfig.build
+    : {
+        bundleName:
+          appConfig.build.bundleName || defaultConfig.build.bundleName,
+        templateBundleName:
+          appConfig.build.templateBundleName ||
+          defaultConfig.build.templateBundleName,
+        addVersion:
+          typeof appConfig.build.addVersion === 'undefined'
+            ? defaultConfig.build.addVersion
+            : appConfig.build.addVersion,
+        sourcemaps:
+          typeof appConfig.build.sourcemaps === 'undefined'
+            ? defaultConfig.build.sourcemaps
+            : appConfig.build.sourcemaps,
+        splitBundle:
+          typeof appConfig.build.splitBundle === 'undefined'
+            ? defaultConfig.build.splitBundle
+            : appConfig.build.splitBundle,
+        layoutComponents:
+          appConfig.build.layoutComponents ||
+          defaultConfig.build.layoutComponents,
+        HTMLRoot: appConfig.build.HTMLRoot || defaultConfig.build.HTMLRoot,
+        injectSymbols:
+          typeof appConfig.build.injectSymbols === 'undefined'
+            ? defaultConfig.build.injectSymbols
+            : appConfig.build.injectSymbols,
+      },
+  twig: appConfig.twig || defaultConfig.twig,
+  HTMLBeautify:
+    typeof appConfig.HTMLBeautify === 'undefined' ||
+    appConfig.HTMLBeautify === false
+      ? defaultConfig.HTMLBeautify
+      : appConfig.HTMLBeautify,
+  manifest:
+    typeof appConfig.manifest === 'undefined' || appConfig.manifest === false
+      ? defaultConfig.manifest
+      : appConfig.manifest,
+  sass: appConfig.sass || defaultConfig.sass,
+  autoprefixer:
+    typeof appConfig.autoprefixer === 'undefined' ||
+    appConfig.autoprefixer === false
+      ? defaultConfig.autoprefixer
+      : appConfig.autoprefixer,
+  cssNano: appConfig.cssNano || defaultConfig.cssNano,
+  imagemin:
+    typeof appConfig.imagemin === 'undefined' || appConfig.imagemin === false
+      ? defaultConfig.imagemin
+      : appConfig.imagemin,
 }
 
 function loadAppConfig(): AppConfig | undefined {
   try {
-    const fileConfig = PathsHelper.joinSrcDir('config.ts')
+    const fileConfig = joinSrcDir('config.ts')
     if (!isFile(fileConfig)) {
       return undefined
     }
     return requireFile<AppConfig>(fileConfig)
   } catch (e) {
-    LogHelper.logError(e)
+    logError(e)
   }
   return undefined
 }

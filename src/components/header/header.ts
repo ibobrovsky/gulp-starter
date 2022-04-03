@@ -1,5 +1,10 @@
-import { DomHelper, getOffset } from '../../helpers/DomHelper'
-import { scrollbarFixedClass } from '../../helpers/ScrollbarHelper'
+import {
+  getScrollTop,
+  getOffset,
+  domEventEmitter,
+  DomEvents,
+} from '../../helpers/dom'
+import { scrollbarFixedClass } from '../../helpers/scrollbar'
 
 const header = document.querySelector<HTMLElement>('.header')
 
@@ -9,9 +14,9 @@ const isFixed = (): boolean => {
   }
 
   const { top } = getOffset(header)
-  const scrollTop = DomHelper.getScrollTop()
+  const scrollTop = getScrollTop()
 
-  return scrollTop > 0 && scrollTop >= top && !DomHelper.isLg()
+  return scrollTop > 0 && scrollTop >= top
 }
 
 const handler = (): void => {
@@ -20,10 +25,8 @@ const handler = (): void => {
   }
   const method = isFixed() ? 'add' : 'remove'
   header.classList[method]('header--fixed')
-  const container = header.querySelector<HTMLElement>('.header__container')
-  if (container) {
-    container.classList[method](scrollbarFixedClass)
-  }
+  const container = header.querySelector('.header__container')
+  container?.classList[method](scrollbarFixedClass)
 }
 
-DomHelper.$on(['scroll', 'resize'], handler)
+domEventEmitter.on([DomEvents.SCROLL, DomEvents.RESIZE], handler)

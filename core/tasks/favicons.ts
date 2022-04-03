@@ -1,24 +1,25 @@
 import { ITask } from '../index'
-import PathsHelper from '../helpers/PathsHelper'
-import { dest, src } from 'gulp'
-import { appConfig, defaultConfig, distConfig } from '../config'
+import { joinDistDir, joinSrcDir } from '../utils/path'
 import { IS_DEV } from '../utils/env'
 import { isFile } from '../utils/isFile'
-import { plumber } from './utils/plumber'
+import { dest, src } from 'gulp'
+import { plumber } from '../utils/tasks/plumber'
+import { config } from '../config'
 // @ts-ignore
 import gulpFavicons from 'gulp-favicons'
-import { mergeOptions } from '../utils/mergeOptions'
 
 interface FaviconsTask extends ITask {
   dest: () => NodeJS.ReadWriteStream
   favicons: () => NodeJS.ReadWriteStream
 }
 
+export const faviconsTaskName = 'generate:favicons'
+
 const faviconsTask: FaviconsTask = {
-  build: 3,
-  name: 'generate:favicons',
+  build: 2,
+  name: faviconsTaskName,
   run(done) {
-    const icon = PathsHelper.joinSrcDir('icon.png')
+    const icon = joinSrcDir('icon.png')
 
     if (IS_DEV || !isFile(icon)) {
       done()
@@ -27,12 +28,10 @@ const faviconsTask: FaviconsTask = {
     return src(icon).pipe(plumber()).pipe(this.favicons()).pipe(this.dest())
   },
   favicons() {
-    let params = mergeOptions(appConfig.manifest, defaultConfig.manifest, true)
-
-    return gulpFavicons(params)
+    return gulpFavicons(config.manifest)
   },
   dest() {
-    return dest(PathsHelper.joinDistDir(distConfig.favicons))
+    return dest(joinDistDir(config.dist.favicons))
   },
 }
 

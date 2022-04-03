@@ -1,50 +1,69 @@
 $columns: 24;
 $atom: sassMath(100%, $columns);
 
-$break_xs: 360;
+$break_xs: 375;
 $break_sm: 768;
 $break_md: 1024;
-$break_lg: 1376;
-$break_xl: 1920;
+$break_lg: 1280;
+$break_xl: 1400;
+$break_xxl: 1920;
 $container_max_width: 1504;
 
-$offset: 32;
+$offset: 16;
+$offset_sm: 32;
 $offset_one_side: sassMath($offset, 2);
+$offset_one_side_sm: sassMath($offset_sm, 2);
 
 @mixin container() {
   width: 100%;
-  max-width: rem($container_max_width + 40);
+  max-width: rem($container_max_width + 96);
   margin: 0 auto;
   padding-left: rem(20);
   padding-right: rem(20);
   @include sm-block() {
-    max-width: rem($container_max_width + 64);
-    padding-left: rem(32);
-    padding-right: rem(32);
+    padding-left: rem(40);
+    padding-right: rem(40);
   }
   @include md-block() {
-    max-width: rem($container_max_width + 96);
     padding-left: rem(48);
     padding-right: rem(48);
+  }
+  @include from-to($break_lg, $break_xl) {
+    padding-left: rem(32);
+    padding-right: rem(32);
   }
 }
 
 @mixin row-offsets(){
   margin-left: rem(($offset_one_side * -1));
   margin-right: rem(($offset_one_side * -1));
+  @include sm-block() {
+    margin-left: rem(($offset_one_side_sm * -1));
+    margin-right: rem(($offset_one_side_sm * -1));
+  }
 }
 
 @mixin row-offsets-full(){
   margin: rem(($offset_one_side * -1));
+  @include sm-block() {
+    margin: rem(($offset_one_side_sm * -1));
+  }
 }
 
 @mixin col-offsets($type){
   #{$type}-left: rem($offset_one_side);
   #{$type}-right: rem($offset_one_side);
+  @include sm-block() {
+    #{$type}-left: rem($offset_one_side_sm);
+    #{$type}-right: rem($offset_one_side_sm);
+  }
 }
 
 @mixin col-offsets-full($type){
   #{$type}: rem($offset_one_side);
+  @include sm-block() {
+    #{$type}: rem($offset_one_side_sm);
+  }
 }
 
 @mixin row-flex(){
@@ -59,11 +78,6 @@ $offset_one_side: sassMath($offset, 2);
   @include row-offsets-full();
 }
 
-@mixin row-float(){
-  @include row-offsets();
-  @include clearfix();
-}
-
 @mixin col(){
   word-wrap: break-word;
   @include col-offsets(margin);
@@ -74,23 +88,31 @@ $offset_one_side: sassMath($offset, 2);
   @include col-offsets-full(margin);
 }
 
-@mixin col-float(){
-  float: left;
-}
-
 @mixin shift-left($n){
   $val: sassMath(100%, $columns) * $n;
   margin-left: #{calc(#{$val} + #{rem($offset_one_side)})};
+  @include sm-block() {
+    $val: sassMath(100%, $columns) * $n;
+    margin-left: #{calc(#{$val} + #{rem($offset_sm)})};
+  }
 }
 
 @mixin shift-right($n){
   $val: sassMath(100%, $columns) * $n;
   margin-right: #{calc(#{$val} + #{rem($offset_one_side)})};
+  @include sm-block() {
+    $val: sassMath(100%, $columns) * $n;
+    margin-right: #{calc(#{$val} + #{rem($offset_sm)})};
+  }
 }
 
 @mixin size($n){
-  $val: sassMath(100%, $columns)  * $n;
+  $val: sassMath(100%, $columns) * $n;
   width: #{calc(#{$val} - #{rem($offset)})};
+  @include sm-block() {
+    $val: sassMath(100%, $columns) * $n;
+    width: #{calc(#{$val} - #{rem($offset_sm)})};
+  }
 }
 
 
@@ -154,6 +176,18 @@ $offset_one_side: sassMath($offset, 2);
   }
 }
 
+@mixin xxl($name, $value){
+  @media screen and (min-width: #{rem($break_xxl)}){
+    #{$name}: $value;
+  }
+}
+
+@mixin xxl-block(){
+  @media screen and (min-width: #{rem($break_xxl)}){
+    @content;
+  }
+}
+
 @mixin from($min_width){
   @media screen and (min-width: #{rem($min_width)}){
     @content;
@@ -169,13 +203,5 @@ $offset_one_side: sassMath($offset, 2);
 @mixin from-to($min_width, $max_width){
   @media screen and (min-width: #{rem($min_width)}) and (max-width: #{rem($max_width - 1)}){
     @content;
-  }
-}
-
-@mixin clearfix(){
-  &::after{
-    display: block;
-    content: "";
-    clear: both;
   }
 }

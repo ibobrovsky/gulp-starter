@@ -1,13 +1,14 @@
 import { ITask } from '../index'
-import { dest, lastRun, src } from 'gulp'
-import { plumber } from './utils/plumber'
-import { SrcOptions } from 'vinyl-fs'
 import store from '../store'
-import PathsHelper from '../helpers/PathsHelper'
-import editTime from './utils/editTime'
-import path from 'path'
-import { distConfig } from '../config'
+import { IS_DEV } from '../utils/env'
+import { SrcOptions } from 'vinyl-fs'
+import { dest, lastRun, src } from 'gulp'
+import { plumber } from '../utils/tasks/plumber'
+import { componentsDir, joinComponentsDir, joinDistDir } from '../utils/path'
+import editTime from '../utils/tasks/editTime'
 import File from 'vinyl'
+import path from 'path'
+import { config } from '../config'
 
 interface AssetsTask extends ITask {
   globs: string[]
@@ -15,12 +16,21 @@ interface AssetsTask extends ITask {
   since: (file: File) => number | Date | undefined
 }
 
+export const assetsTaskName = 'copy:assets'
+
 const assetsTask: AssetsTask = {
-  build: 3,
-  name: 'copy:assets',
+  build: 2,
+  name: assetsTaskName,
   globs: ['*', 'assets', '**', '*.*'],
   run(done) {
-    const files: string[] = [...store.assets.items]
+    const files: string[] = [...store.assets.getItems()]
+
+    if (IS_DEV) {
+      const all = joinComponentsDir(...this.globs)
+      if (!files.includes(all)) {
+        files.push(all)
+      }
+    }
 
     if (!files.length) {
       return done()
@@ -33,14 +43,10 @@ const assetsTask: AssetsTask = {
 
     return src(files, options).pipe(plumber()).pipe(this.dest())
   },
-  since(file) {
-    const isModule = !file.path.includes(PathsHelper.componentsDir)
-    return isModule ? undefined : lastRun(this.name)
-  },
   watch() {
     return [
       {
-        files: PathsHelper.joinComponentsDir(...this.globs),
+        files: joinComponentsDir(...this.globs),
         tasks: this.name,
         on: {
           event: 'add',
@@ -49,6 +55,10 @@ const assetsTask: AssetsTask = {
       },
     ]
   },
+  since(file) {
+    const isModule = !file.path.includes(componentsDir)
+    return isModule ? undefined : lastRun(this.name)
+  },
   dest() {
     return dest((file) => {
       const basename = path.basename(file.path)
@@ -56,14 +66,12 @@ const assetsTask: AssetsTask = {
 
       if (extname === '.js') {
         file.path = path.join(file.base, basename)
-        return PathsHelper.joinDistDir(distConfig.scripts)
+        return joinDistDir(config.dist.scripts)
       } else if (extname === '.css') {
         file.path = path.join(file.base, basename)
-        return PathsHelper.joinDistDir(distConfig.styles)
+        return joinDistDir(config.dist.styles)
       } else {
-        let arr = path
-          .relative(PathsHelper.componentsDir, file.path)
-          .split(path.sep)
+        let arr = path.relative(componentsDir, file.path).split(path.sep)
 
         const componentNames = Object.keys(store.components)
 
@@ -72,7 +80,7 @@ const assetsTask: AssetsTask = {
           : arr[arr.length - 1]
 
         file.path = path.join(file.base, asset)
-        return PathsHelper.joinDistDir(distConfig.static)
+        return joinDistDir(config.dist.static)
       }
     })
   },

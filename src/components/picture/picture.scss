@@ -63,7 +63,7 @@
 
   &--ratio {
     position: relative;
-    @include responsive-ratio(30, 17);
+    @include responsive-ratio(16, 9);
     picture {
       @include abs-full();
       z-index: 2;
