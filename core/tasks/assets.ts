@@ -73,7 +73,9 @@ const assetsTask: AssetsTask = {
       } else {
         let arr = path.relative(componentsDir, file.path).split(path.sep)
 
-        const componentNames = Object.keys(store.components)
+        const componentNames = store.components
+          .getItems()
+          .map(({ name }) => name)
 
         let asset = componentNames.includes(arr[0])
           ? arr.filter((i) => i !== 'assets').join(path.sep)

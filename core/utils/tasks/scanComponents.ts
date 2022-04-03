@@ -74,7 +74,7 @@ function scanComponentDeps(component: IComponent): void {
   if (isArray(deepFileData.plugins)) {
     deepFileData.plugins.forEach((plugin) => {
       if (!plugin.from) {
-        return (plugin.from = join(component.path))
+        return (plugin.from = joinComponentsDir(component.name, 'assets'))
       }
       if (isExternal(plugin.from)) {
         return
