@@ -71,7 +71,7 @@ function parseXLink(value: string, page: IPage): void {
     oldPath: value,
     newPath: config.build.injectSymbols
       ? symbolId
-      : config.build.HTMLRoot + config.dist.symbols + `/symbols.svg${symbolId}`,
+      : config.build.HTMLRoot + config.dist.symbols + `/sprite.svg${symbolId}`,
   })
   store.symbols.setItem(filePath)
   if (!page.symbols) {
