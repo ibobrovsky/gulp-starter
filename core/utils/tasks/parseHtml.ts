@@ -34,7 +34,14 @@ const parseHtml: IPipeHandler = (file) => {
           parseClasses(attribs.class, page)
         }
 
-        Object.keys(attribs).forEach((attr) => parseAssets(attribs[attr]))
+        Object.keys(attribs).forEach((attr) => {
+          if (
+            !['src', 'data-src', 'srcset', 'data-srcset', 'href'].includes(attr)
+          ) {
+            return
+          }
+          parseAssets(attribs[attr])
+        })
       },
       onend() {
         store.pages.setItem(page)
@@ -111,12 +118,13 @@ function parseAssets(attrValue: string): void {
 
     value.split(' ').forEach((v) => {
       v = v.trim()
-      if (!v || isExternal(v) || !isAlias(v)) {
+      if (!v || !isAlias(v)) {
         return
       }
 
       const filePath = getPath(v)
-      if (!isFile(filePath) || store.assets.hasItem(filePath)) {
+
+      if (!isFile(filePath)) {
         return
       }
 

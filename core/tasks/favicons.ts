@@ -22,7 +22,7 @@ const faviconsTask: FaviconsTask = {
     const icon = joinSrcDir('icon.png')
 
     if (IS_DEV || !isFile(icon)) {
-      done()
+      return done()
     }
 
     return src(icon).pipe(plumber()).pipe(this.favicons()).pipe(this.dest())

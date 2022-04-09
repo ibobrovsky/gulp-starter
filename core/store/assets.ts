@@ -36,7 +36,12 @@ export function hasReplace(item: Replaces): boolean {
 }
 
 export function setReplace(item: Replaces): void {
-  if (!hasReplace(item)) {
+  const index = assets.replaces.findIndex(
+    ({ oldPath }) => oldPath === item.oldPath,
+  )
+  if (index === -1) {
     assets.replaces.push(item)
+  } else {
+    assets.replaces.splice(index, 1, item)
   }
 }

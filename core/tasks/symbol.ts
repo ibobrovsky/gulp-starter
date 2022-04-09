@@ -74,9 +74,10 @@ const symbolTask: SymbolTask = {
   symbols() {
     const conf: spriter.Config = {
       svg: {
-        namespaceClassnames: false,
-        xmlDeclaration: false,
-        doctypeDeclaration: false,
+        // namespaceClassnames: false,
+        // xmlDeclaration: false,
+        // doctypeDeclaration: false,
+        dimensionAttributes: true,
         rootAttributes: {
           style:
             'position:absolute;top:0;left:0;width:1px;height:1px;visibility:hidden;opacity:0;',

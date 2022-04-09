@@ -34,8 +34,12 @@ export function getItem(name: string): IPage | undefined {
 }
 
 export function setItem(page: IPage): void {
-  if (!hasItem(page.name)) {
+  const index = pages.items.findIndex((_page) => _page.name === page.name)
+
+  if (index === -1) {
     pages.items.push(page)
+  } else {
+    pages.items.splice(index, 1, mergeOptions(pages.items[index], page, true))
   }
 }
 
@@ -53,10 +57,6 @@ export function setData(
   } else {
     pages.data[key] = data
   }
-}
-
-export function getDepsChanged(): PagesState['depsChanged'] {
-  return pages.depsChanged
 }
 
 export function clearDepsChanged(): void {
