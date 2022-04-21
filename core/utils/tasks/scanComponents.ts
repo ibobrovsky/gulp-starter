@@ -120,21 +120,6 @@ function scanComponentDeps(component: IComponent): void {
         const ext = path.extname(params.name)
 
         switch (ext) {
-          case '.js':
-            {
-              const scriptIndex = injects.scripts.findIndex(
-                ({ path }) => path === filePath,
-              )
-              if (scriptIndex === -1) {
-                injects.scripts.push({
-                  path: filePath,
-                  name: params.name,
-                  async: params.async,
-                  defer: params.defer,
-                })
-              }
-            }
-            break
           case '.css':
             {
               const styleIndex = injects.styles.findIndex(
@@ -146,6 +131,21 @@ function scanComponentDeps(component: IComponent): void {
                   name: params.name,
                   prefetch: params.prefetch,
                   preload: params.preload,
+                })
+              }
+            }
+            break
+          default:
+            {
+              const scriptIndex = injects.scripts.findIndex(
+                ({ path }) => path === filePath,
+              )
+              if (scriptIndex === -1) {
+                injects.scripts.push({
+                  path: filePath,
+                  name: params.name,
+                  async: params.async,
+                  defer: params.defer,
                 })
               }
             }
