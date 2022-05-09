@@ -6,7 +6,7 @@
 
 Клонируйте репозиторий:
 ```bash
-git clone https://github.com/bobrovsky-dev/gulp-starter.git
+git clone https://github.com/ibobrovsky/gulp-starter.git
 ```
 Далее нужно установить зависимости из package.json с помощью npm или yarn:
 ```bash
