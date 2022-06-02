@@ -1,6 +1,6 @@
 {
-  "name": "gulp-starter",
-  "version": "1.0.1",
+  "name": "gulp-ts-starter",
+  "version": "1.0.2",
   "description": "",
   "private": true,
   "scripts": {
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bobrovsky-dev/gulp-starter.git"
+    "url": "git+https://github.com/ibobrovsky/gulp-ts-starter.git"
   },
   "author": "Bobrovsky Igor",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bobrovsky-dev/gulp-starter/issues"
+    "url": "https://github.com/ibobrovsky/gulp-ts-starter/issues"
   },
-  "homepage": "https://github.com/bobrovsky-dev/gulp-starter#readme",
+  "homepage": "https://github.com/ibobrovsky/gulp-ts-starter#readme",
   "devDependencies": {
     "@babel/core": "^7.17.8",
     "@babel/eslint-parser": "^7.17.0",

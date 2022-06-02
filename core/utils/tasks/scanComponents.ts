@@ -81,7 +81,9 @@ function scanComponentDeps(component: IComponent): void {
       }
 
       if (isAlias(plugin.from)) {
-        return (plugin.from = getPath(plugin.from))
+        if (isDirectory(getPath(plugin.from))) {
+          return (plugin.from = getPath(plugin.from))
+        }
       }
 
       return (plugin.from = joinNodeModulesDir(plugin.from))
