@@ -1,7 +1,7 @@
 {% macro header(props = {}) %}
     <header class="header">
         <div class="header__container">
-            header
+            {{ props.global.header.items | json_encode }}
         </div>
     </header>
 {% endmacro %}

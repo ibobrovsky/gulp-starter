@@ -223,22 +223,45 @@ function scanComponentDeps(component: IComponent): void {
 }
 
 function scanComponentData(component: IComponent): JsonData | undefined {
-  const jsonFilePath = join(component.path, 'data.json')
-  if (!isFile(jsonFilePath)) {
-    return
+  const dataFileNames: string[] = ['data.json']
+
+  if (component.name !== 'data') {
+    dataFileNames.unshift('data.ts')
   }
 
-  try {
-    const jsonFileData = JSON.parse(readFileSync(jsonFilePath).toString())
-    return isObject(jsonFileData) ? jsonFileData : undefined
-  } catch (e: any) {
-    throw new Error(
-      `\n\n\x1b[41mFAIL\x1b[0m: A JSON "\x1b[36m${join(
-        component.name,
-        'data.json',
-      )}\x1b[0m" have SyntaxError:\n${e?.message}\n\n`,
-    )
-  }
+  let res: JsonData | undefined = undefined
+
+  dataFileNames.forEach((name) => {
+    if (res) {
+      return
+    }
+    const jsonFilePath = join(component.path, name)
+    if (!isFile(jsonFilePath)) {
+      return
+    }
+
+    try {
+      let jsonFileData = undefined
+      if (name == 'data.json') {
+        jsonFileData = JSON.parse(readFileSync(jsonFilePath).toString())
+      } else if (name == 'data.ts') {
+        jsonFileData = requireFile(jsonFilePath, true)
+      }
+
+      if (isObject(jsonFileData)) {
+        res = jsonFileData
+      }
+    } catch (e: any) {
+      throw new Error(
+        `\n\n\x1b[41mFAIL\x1b[0m: A JSON "\x1b[36m${join(
+          component.name,
+          name,
+        )}\x1b[0m" have SyntaxError:\n${e?.message}\n\n`,
+      )
+    }
+  })
+
+  return res
 }
 
 function scanComponentTemplate(component: IComponent): void {

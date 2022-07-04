@@ -64,7 +64,7 @@ const scriptsTask: ScriptsTask = {
   watch() {
     return [
       {
-        files: joinComponentsDir('**', '!(deps).ts'),
+        files: joinComponentsDir('**', '!(deps.ts|data.ts)'),
         tasks: this.name,
       },
     ]

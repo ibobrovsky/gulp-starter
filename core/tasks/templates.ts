@@ -101,7 +101,7 @@ const templatesTask: TemplatesTask = {
         },
       },
       {
-        files: joinComponentsDir('**', `(data.json|*${this.extName})`),
+        files: joinComponentsDir('**', `(data.ts|data.json|*${this.extName})`),
         on: {
           event: 'change',
           handler: this.checkIsOnPage.bind(this),
