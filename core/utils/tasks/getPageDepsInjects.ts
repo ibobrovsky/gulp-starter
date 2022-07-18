@@ -9,17 +9,6 @@ const getPageDepsInjects = (page: IPage): Injects => {
     links: [],
   }
 
-  page.views.forEach(({ fullName, path }) => {
-    if (res.styles.find((i) => i.path === path)) {
-      return
-    }
-
-    res.styles.push({
-      name: fullName + '.css',
-      path,
-    })
-  })
-
   getDepsComponents(page.components).forEach(({ injects, views }) => {
     if (!injects) {
       return

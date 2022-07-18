@@ -96,6 +96,17 @@ const injectToHTML = (pageContent: string, page: IPage): string => {
     }
   }
 
+  page.views.forEach(({ fullName, path }) => {
+    if (injects.styles.find((i) => i.path === path)) {
+      return
+    }
+
+    injects.styles.push({
+      name: fullName + '.css',
+      path,
+    })
+  })
+
   injects.styles.forEach((style) => {
     const attrs: Attrs = {}
     attrs.rel = 'stylesheet'
