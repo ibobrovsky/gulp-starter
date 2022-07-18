@@ -1,11 +1,15 @@
 import { JsonData } from '../types'
 import { hasOwn } from '../utils/hasOwn'
 import { mergeOptions } from '../utils/mergeOptions'
+import { View } from './components'
+
+type PageView = { path: string; name: string; fullName: string }
 
 export interface IPage {
   name: string
   path: string
   components: string[]
+  views: PageView[]
   symbols: boolean
 }
 

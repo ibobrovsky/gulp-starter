@@ -18,12 +18,17 @@ export interface Injects {
   links: InjectsLinks[]
 }
 
+export type View = {
+  style?: { path: string; name: string; fullName: string }
+}
+
 export type IComponent = {
   injects?: Injects
   template?: string
   script?: string
   style?: string
   depsComponents?: string[]
+  views?: View[]
 } & DefaultFile
 
 interface ComponentsState {

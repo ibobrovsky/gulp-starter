@@ -1,8 +1,9 @@
 {% extends "_app.twig" %}
+{% from '../../components/header/template-1.twig' import headerTemplate1 %}
 
 {% block layout %}
     <div class="app">
-        {{ header({
+        {{ headerTemplate1({
             global: global
         }) }}
         <main class="app__main">

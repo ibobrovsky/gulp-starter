@@ -3,8 +3,8 @@ import { componentsDir, joinComponentsDir, joinNodeModulesDir } from '../path'
 import store from '../../store'
 import { readdirSync, readFileSync } from 'fs'
 import { logError } from '../log'
-import { IComponent } from '../../store/components'
-import path, { join } from 'path'
+import { IComponent, View } from '../../store/components'
+import path, { basename, extname, join } from 'path'
 import { isFile } from '../isFile'
 import { requireFile } from '../requireFile'
 import { Deps, JsonData } from '../../types'
@@ -70,6 +70,8 @@ function scanComponentDeps(component: IComponent): void {
     styles: [],
     links: [],
   }
+
+  const views: IComponent['views'] = []
 
   if (isArray(deepFileData.plugins)) {
     deepFileData.plugins.forEach((plugin) => {
@@ -204,6 +206,41 @@ function scanComponentDeps(component: IComponent): void {
     })
   }
 
+  if (isArray(deepFileData.views)) {
+    deepFileData.views.forEach((depsView) => {
+      const componentPath = component.path
+
+      const view: View = {
+        style: undefined,
+      }
+
+      if (depsView.style) {
+        const filePath = path.join(componentPath, depsView.style)
+        if (isFile(filePath)) {
+          const name = basename(filePath, extname(filePath))
+
+          view.style = {
+            path: filePath,
+            name,
+            fullName: component.name + '-' + name,
+          }
+        }
+      }
+
+      // if (depsView.script) {
+      //   const filePath = path.join(componentPath, depsView.script)
+      //   if (isFile(filePath)) {
+      //     view.script = {
+      //       path: filePath,
+      //       name: component.name + '-' + basename(filePath, extname(filePath)),
+      //     }
+      //   }
+      // }
+
+      views.push(view)
+    })
+  }
+
   if (isString(deepFileData.components)) {
     deepFileData.components = [deepFileData.components]
   }
@@ -220,6 +257,7 @@ function scanComponentDeps(component: IComponent): void {
 
   component.depsComponents = depsComponents
   component.injects = injects
+  component.views = views
 }
 
 function scanComponentData(component: IComponent): JsonData | undefined {

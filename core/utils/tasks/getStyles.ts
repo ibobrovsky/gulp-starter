@@ -6,6 +6,7 @@ import { isFile } from '../isFile'
 import { logError, logWarn } from '../log'
 import store from '../../store'
 import getDepsComponents from './getDepsComponents'
+import { IS_DEV } from '../env'
 
 export interface IStyles {
   [key: string]: string[]
@@ -40,11 +41,34 @@ export const getBundleStyles = (): string[] => {
 }
 
 export const getSplitStyles = (): IStyles => {
+  const splitBundleCss =
+    typeof config.build.splitBundle === 'boolean'
+      ? config.build.splitBundle
+      : config.build.splitBundle.includes('css')
   const bundleName = config.build.bundleName
   const templateBundleName = config.build.templateBundleName
 
   const styles: IStyles = {
     [bundleName]: getBundleStyles(),
+  }
+
+  store.pages.getItems().forEach((page) => {
+    getDepsComponents(page.components).forEach(({ views }) => {
+      if (!views) {
+        return
+      }
+      views.forEach(({ style }) => {
+        if (!style || styles[style.fullName]) {
+          return
+        }
+
+        styles[style.fullName] = [style.path]
+      })
+    })
+  })
+
+  if (IS_DEV || !splitBundleCss) {
+    return styles
   }
 
   const globalStyles = getGlobalStyles()

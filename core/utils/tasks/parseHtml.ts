@@ -12,6 +12,7 @@ import { isExternal } from '../isExternal'
 import { componentsDir, joinPageDir } from '../path'
 import { slashNormalize } from '../slashNormalize'
 import injectToHTML from './injectToHTML'
+import getDepsComponents from './getDepsComponents'
 
 const parseHtml: IPipeHandler = (file) => {
   const pageName = basename(file.path, extname(file.path))
@@ -21,6 +22,7 @@ const parseHtml: IPipeHandler = (file) => {
     name: pageName,
     path: joinPageDir(pageName + '.twig'),
     components: [],
+    views: [],
     symbols: false,
   }
   const parser = new Parser(
@@ -32,6 +34,7 @@ const parseHtml: IPipeHandler = (file) => {
 
         if (attribs.class?.length) {
           parseClasses(attribs.class, page)
+          parseViews(attribs.class, page)
         }
 
         Object.keys(attribs).forEach((attr) => {
@@ -104,6 +107,26 @@ function parseClasses(classes: string, page: IPage): void {
       page.components = []
     }
     page.components.push(className)
+  })
+}
+
+function parseViews(classes: string, page: IPage): void {
+  getDepsComponents(page.components).forEach(({ views, name }) => {
+    if (!views) {
+      return
+    }
+    views.forEach(({ style }) => {
+      if (!style) {
+        return
+      }
+      if (
+        classes.includes(style.name) &&
+        classes.includes(name) &&
+        !page.views.find((i) => i.fullName === style.fullName)
+      ) {
+        page.views.push(style)
+      }
+    })
   })
 }
 

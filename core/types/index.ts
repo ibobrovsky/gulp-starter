@@ -42,10 +42,15 @@ export interface DepsLinks {
   title?: string
 }
 
+export interface View {
+  style?: string
+}
+
 export interface Deps {
   plugins?: DepsPlugin[]
   links?: DepsLinks[]
   assets?: string | string[]
   symbols?: string | string[]
   components?: string | string[]
+  views?: View[]
 }

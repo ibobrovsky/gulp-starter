@@ -40,7 +40,10 @@ import gulpRename from 'gulp-rename'
 const sass = gulpSass(dartSass)
 
 interface StylesTask extends ITask {
-  compileBundles: (styles: IStyles) => ReturnType<TaskCallback>
+  compileBundles: (
+    styles: IStyles,
+    done: TaskCallback,
+  ) => ReturnType<TaskCallback>
   compileBundle: (
     files: string[],
     bundleName: string,
@@ -65,18 +68,7 @@ const stylesTask: StylesTask = {
   build: 2,
   name: stylesTaskName,
   run(done) {
-    const splitBundleCss =
-      typeof config.build.splitBundle === 'boolean'
-        ? config.build.splitBundle
-        : config.build.splitBundle.includes('css')
-
-    const bundleName = config.build.bundleName
-
-    if (IS_DEV || !splitBundleCss) {
-      return this.compileBundle(getBundleStyles(), bundleName, done)
-    }
-
-    return this.compileBundles(getSplitStyles())
+    return this.compileBundles(getSplitStyles(), done)
   },
   watch() {
     return [
@@ -86,7 +78,7 @@ const stylesTask: StylesTask = {
       },
     ]
   },
-  compileBundles(styles) {
+  async compileBundles(styles, done) {
     const promises: Promise<any>[] = []
     Object.keys(styles).forEach((bundleName) => {
       const files = styles[bundleName]
@@ -99,7 +91,10 @@ const stylesTask: StylesTask = {
 
       return promises.push(promise)
     })
-    return Promise.all(promises)
+
+    Promise.all(promises).then(() => {
+      done()
+    })
   },
   compileBundle(files, bundleName, done) {
     if (!files.length) {
